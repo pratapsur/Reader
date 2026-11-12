@@ -112,8 +112,15 @@ dialog input,dialog select{background:var(--card)}
 @media(hover:none){.nav{display:none}}
 @media(pointer:coarse){.ib,.chip{min-height:40px}}
 @media(max-height:480px){.top,.bot{padding-top:4px;padding-bottom:4px}}
+.tgl{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;font-size:14px;position:relative}
+.tgl input{position:absolute;opacity:0;width:1px;height:1px}
+.trk{width:46px;height:26px;border-radius:99px;background:var(--line);position:relative;transition:background .2s;border:1px solid rgba(128,128,128,.4)}
+.trk::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.45);transition:transform .2s}
+.tgl input:checked+.trk{background:var(--acc)}
+.tgl input:checked+.trk::after{transform:translateX(20px)}
+.tgl input:focus-visible+.trk{outline:2px solid var(--acc);outline-offset:2px}
 </style></head><body>
-<header><div><h1 id="title">My Library</h1><p id="count"></p></div><div class="hb"><button class="primary" id="addBtn" hidden>+ Add book</button><button class="chip thb" aria-haspopup="menu" aria-label="Change theme"><span class="sw"></span><span class="tn"></span>&nbsp;&#9662;</button><button class="chip" id="cfgBtn">Owner settings</button></div></header>
+<header><div><h1 id="title">My Library</h1><p id="count"></p></div><div class="hb"><label class="tgl"><input type="checkbox" id="dm" role="switch" aria-label="Dark mode"><span class="trk"></span><span class="tl">Dark mode</span></label><button class="primary" id="addBtn" hidden>+ Add book</button><button class="chip thb" aria-haspopup="menu" aria-label="Change theme"><span class="sw"></span><span class="tn"></span>&nbsp;&#9662;</button><button class="chip" id="cfgBtn">Owner settings</button></div></header>
 <div class="bar">
  <input type="search" id="q" placeholder="Search title or author" aria-label="Search">
  <div class="chips" id="status"></div>
@@ -321,7 +328,7 @@ async function openBook(b){
   $('#msg').style.display='none';
 }
 function build(){
-  mode=innerWidth>=760&&innerWidth>innerHeight*1.15?2:1;spreads=[];
+  mode=1;spreads=[];
   if(mode===1)for(let p=1;p<=N;p++)spreads.push([0,p]);
   else{spreads.push([0,1]);for(let p=2;p<=N;p+=2)spreads.push([p,p+1<=N?p+1:0])}
 }
@@ -459,7 +466,7 @@ document.body.appendChild(menu);
 function applyTheme(id){
   const t=THEMES[id]||THEMES.daylight,r=document.documentElement.style;
   ['bg','ink','mute','acc','card','line'].forEach((k,i)=>r.setProperty('--'+k,t[i+1]));
-  r.setProperty('--on',t[7]||'#fff');r.colorScheme=parseInt(t[1].slice(1,3),16)<120?'dark':'light';
+  r.setProperty('--on',t[7]||'#fff');const dark=parseInt(t[1].slice(1,3),16)<120;r.colorScheme=dark?'dark':'light';LS(dark?'lastDark':'lastLight',id);$('#dm').checked=dark;
   document.querySelectorAll('.tn').forEach(e=>e.textContent=t[0]);
   document.querySelectorAll('.sw').forEach(e=>e.style.background=t[4]);
   [...menu.children].forEach(b=>b.classList.toggle('cur',b.dataset.th===id));
@@ -474,6 +481,7 @@ document.addEventListener('click',e=>{
   }else if(!e.target.closest('#tm'))menu.classList.remove('on');
 });
 addEventListener('keydown',e=>{if(e.key==='Escape')menu.classList.remove('on')},true);
+$('#dm').onchange=e=>applyTheme(e.target.checked?(LS('lastDark')||'midnight'):(LS('lastLight')||'daylight'));
 if(!document.documentElement.requestFullscreen)$('#fs').hidden=true;
 applyTheme(LS('theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'midnight':'daylight'));
 refreshOwner();load();
